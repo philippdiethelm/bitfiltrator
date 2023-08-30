@@ -57,12 +57,39 @@ def print_bram_info(
 ) -> None:
   (slr_name, content_frame_addrs, content_frame_ofsts, parity_frame_addrs, parity_frame_ofsts) = bitlocator.locate_bram(bram)
   print(f"{bram}")
+  INIT = []
+  print(f"GENERIC,INDEX,FILE_OFFSET,BIT_OFFSET")
+  # python3 demo.py xczu4ev.bit --brams RAMB18_X2Y95
   for (init_idx, (frame_addr, frame_ofst)) in enumerate(zip(content_frame_addrs, content_frame_ofsts)):
     config_frame = slrNameFar_frame_dict[(slr_name, frame_addr)]
-    print(f"INIT[{init_idx:>5d}] -> {slr_name}, frame address: 0x{frame_addr.to_hex()} ({frame_addr}), frame offset: {frame_ofst:>4d}, frame byte offset in bitstream: {config_frame.byte_ofst}")
+    #print(f"INIT[{init_idx:>5d}] -> {slr_name}, frame address: 0x{frame_addr.to_hex()} ({frame_addr}), frame offset: {frame_ofst:>4d}, frame byte offset in bitstream: {config_frame.byte_ofst}")
+    word = int(frame_ofst / 32)
+    bit_in_word = frame_ofst % 32
+    array_i = int(init_idx / 256)
+    bit_in_array = init_idx % 256
+    print(f"INIT_{array_i:02X},{bit_in_array},{config_frame.byte_ofst},{frame_ofst}")
+    if len(INIT) <= array_i:
+      INIT.insert(array_i, [])
+    INIT[array_i].insert(bit_in_array, f"{(config_frame.words[word] >> bit_in_word) & 1}")
+    #print(f"INIT_{int(init_idx/256):02X}({init_idx%256}) = {(config_frame.words[word] >> bit_in_word) & 1}")
+    #print(f"{init_idx},{word},{bit_in_word},{config_frame.words[word]:08x},{(config_frame.words[word] >> bit_in_word) & 1}")
+  INITP = []
   for (init_idx, (frame_addr, frame_ofst)) in enumerate(zip(parity_frame_addrs, parity_frame_ofsts)):
     config_frame = slrNameFar_frame_dict[(slr_name, frame_addr)]
-    print(f"INIT_P[{init_idx:>5d}] -> {slr_name}, frame address: 0x{frame_addr.to_hex()} ({frame_addr}), frame offset: {frame_ofst:>4d}, frame byte offset in bitstream: {config_frame.byte_ofst}")
+    #print(f"INIT_P[{init_idx:>5d}] -> {slr_name}, frame address: 0x{frame_addr.to_hex()} ({frame_addr}), frame offset: {frame_ofst:>4d}, frame byte offset in bitstream: {config_frame.byte_ofst}")
+    word = int(frame_ofst / 32)
+    bit_in_word = frame_ofst % 32
+    array_i = int(init_idx / 256)
+    bit_in_array = init_idx % 256
+    print(f"INITP_{array_i:02X},{bit_in_array},{config_frame.byte_ofst},{frame_ofst}")
+    if len(INITP) <= array_i:
+      INITP.insert(array_i, [])
+    INITP[array_i].insert(bit_in_array, f"{(config_frame.words[word] >> bit_in_word) & 1}")
+    #print(f"INITP_{int(init_idx/256):02X},({init_idx%256}) = {(config_frame.words[word] >> bit_in_word) & 1}")
+  for (i, bits) in enumerate(INIT):
+    print(f"INIT_{i:02X} => \"{''.join(bits[::-1])}\",")
+  for (i, bits) in enumerate(INITP):
+    print(f"INITP_{i:02X} => \"{''.join(bits[::-1])}\",")
 
 
 # Main program (if executed as script)
